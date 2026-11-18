@@ -135,3 +135,5 @@ tbody tr:hover, tbody tr.active { background: #edf6f5; }
   #map { height: 390px; }
   .metric-list { grid-template-columns: 1fr; }
 }
+
+[hidden] { display: none !important; }
