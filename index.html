@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Interactive map and research dashboard for whole-building CENED+2 energy records in Lecco." />
+  <title>Lecco Whole-Building Energy Explorer</title>
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="shell-header">
+    <div>
+      <p class="eyebrow">CENED+2 · LECCO · WHOLE BUILDINGS</p>
+      <h1>Lecco Whole-Building Energy Map</h1>
+      <p class="subtitle">Explore building use, geometry, energy performance, annual energy demand, existing PV and retrofit potential by address.</p>
+    </div>
+    <div class="header-actions">
+      <button class="ghost-button" id="resetFilters">Reset filters</button>
+      <button class="primary-button" id="exportCsv">Export results</button>
+    </div>
+  </header>
+
+  <main class="page-grid">
+    <aside class="filter-panel" aria-label="Data filters">
+      <div class="panel-heading">
+        <h2>Filter buildings</h2>
+        <span id="resultCount" class="count-pill">—</span>
+      </div>
+
+      <label class="field-label" for="searchInput">Address or APE ID</label>
+      <input id="searchInput" class="control" type="search" placeholder="e.g. Via Mentana or 9704…" />
+
+      <label class="field-label" for="useFilter">Building type</label>
+      <select id="useFilter" class="control">
+        <option value="all">All buildings</option>
+        <option value="residential">Residential</option>
+        <option value="nonResidential">Non-residential</option>
+        <option value="public">Public ownership/use</option>
+      </select>
+
+      <label class="field-label" for="classFilter">Energy class</label>
+      <select id="classFilter" class="control">
+        <option value="all">All classes</option>
+        <option value="A">Class A (A1–A4)</option>
+        <option value="B-C">B–C</option>
+        <option value="D-E">D–E</option>
+        <option value="F-G">F–G</option>
+      </select>
+
+      <label class="check-row"><input id="pvOnly" type="checkbox" /> Existing PV only</label>
+      <label class="check-row"><input id="latestOnly" type="checkbox" /> Latest APE per address only</label>
+
+      <div class="filter-divider"></div>
+      <p class="microcopy">CENED values are annual calculations under standard-use conditions, not measured smart-meter data.</p>
+    </aside>
+
+    <section class="dashboard">
+      <section class="kpi-grid" aria-label="Key indicators">
+        <article class="kpi-card"><span>Current records</span><strong id="kpiRecords">—</strong><small>filtered APE certificates</small></article>
+        <article class="kpi-card"><span>Unique addresses</span><strong id="kpiAddresses">—</strong><small>normalised locations</small></article>
+        <article class="kpi-card"><span>Residential share</span><strong id="kpiResidential">—</strong><small>RESIDENZIALE</small></article>
+        <article class="kpi-card"><span>Existing PV</span><strong id="kpiPv">—</strong><small>system or annual use &gt; 0</small></article>
+      </section>
+
+      <section class="map-detail-grid">
+        <article class="card map-card">
+          <div class="card-heading">
+            <div>
+              <p class="section-kicker">LOCATION</p>
+              <h2>Building address map</h2>
+            </div>
+            <button class="ghost-button compact" id="locateVisible">Locate all addresses</button>
+          </div>
+          <div id="map" aria-label="Map of CENED building addresses in Lecco"></div>
+          <div class="map-status" id="mapStatus">Cached locations are shown automatically. Select “Locate all addresses” to resolve every remaining address.</div>
+        </article>
+
+        <article class="card detail-card" id="detailCard">
+          <div class="empty-state" id="emptyState">
+            <span class="empty-icon">⌖</span>
+            <h2>Select a building</h2>
+            <p>Choose a table row or map marker to inspect the core APE research fields.</p>
+          </div>
+          <div id="detailContent" hidden></div>
+        </article>
+      </section>
+
+      <section class="analysis-grid">
+        <article class="card chart-card">
+          <div class="card-heading"><div><p class="section-kicker">PERFORMANCE</p><h2>Energy class distribution</h2></div></div>
+          <div id="classChart" class="bar-chart" aria-label="Energy class distribution"></div>
+        </article>
+        <article class="card chart-card">
+          <div class="card-heading"><div><p class="section-kicker">ANNUAL INTENSITY</p><h2>EPgl,nren bands</h2></div></div>
+          <div id="epChart" class="bar-chart" aria-label="Non-renewable primary energy performance bands"></div>
+        </article>
+      </section>
+
+      <section class="card table-card">
+        <div class="card-heading table-heading">
+          <div><p class="section-kicker">RECORDS</p><h2>Whole-building register</h2></div>
+          <div class="legend"><span><i class="dot a"></i>Class A</span><span><i class="dot mid"></i>B–E</span><span><i class="dot low"></i>F–G</span></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Address</th><th>Type</th><th>Class</th><th>EPgl,nren</th><th>Annual electricity</th><th>Heated area</th><th>APE date</th></tr></thead>
+            <tbody id="recordsBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <button class="ghost-button compact" id="prevPage">Previous</button>
+          <span id="pageLabel">—</span>
+          <button class="ghost-button compact" id="nextPage">Next</button>
+        </div>
+      </section>
+
+      <footer class="source-note">
+        <strong>Data scope:</strong> whole-building APE records in Lecco: 476 certificates across 410 normalised addresses. Locations are resolved from public address geocoding; no coordinates are inferred when a match cannot be verified.
+        <a href="https://www.dati.lombardia.it/Energia/Database-CENED-2-Certificazione-ENergetica-degli-E/bbky-sde5" target="_blank" rel="noreferrer">View CENED+2 source</a>
+      </footer>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
